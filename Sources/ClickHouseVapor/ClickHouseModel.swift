@@ -34,18 +34,14 @@ public struct TableModelMeta {
           return "\(field.key) \(field.clickHouseTypeName().string)"
         }.joined(separator: ",")
 
-        let tableName = table
-
         let onCluster = cluster.map { "ON CLUSTER \($0)" } ?? ""
-
         let engineReplicated = "ReplicatedReplacingMergeTree('/clickhouse/{cluster}/tables/{database}.{table}/{shard}', '{replica}')"
         let engineNormal = "ReplacingMergeTree()"
-
         let engine = isCluster ? engineReplicated : engineNormal
 
         var query =
         """
-        CREATE TABLE IF NOT EXISTS \(database).\(tableName) \(onCluster) (\(columnDescriptions))
+        CREATE TABLE IF NOT EXISTS \(database).\(table) \(onCluster) (\(columnDescriptions))
         ENGINE = \(engine)
         PRIMARY KEY (\(ids.joined(separator: ",")))
         """
@@ -54,13 +50,6 @@ public struct TableModelMeta {
         }
         query += "ORDER BY (\(order.joined(separator: ",")))"
         return query
-    }
-    
-    func dropTableQuery() -> String {
-        if let cluster = cluster {
-            return "DROP TABLE IF EXISTS \(database).\(table) ON CLUSTER \(cluster)"
-        }
-        return "DROP TABLE IF EXISTS \(database).\(table)"
     }
 }
 
@@ -132,12 +121,14 @@ extension ClickHouseModel {
     /// Delete this table. This operation cannot be undone.
     public static func deleteTable(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil) throws -> EventLoopFuture<Void> {
         let meta = table ?? Self.tableMeta
-        let query = meta.dropTableQuery()
-        connection.logger.info("\(query)")
-        if meta.isCluster {
+        if let cluster = meta.cluster {
+            let query = "DROP TABLE IF EXISTS \(meta.database).\(meta.table) ON CLUSTER \(cluster)"
+            connection.logger.info("\(query)")
             // deletes on a cluster, return some information
             return connection.query(sql: query).transform(to: ())
         } else {
+            let query = "DROP TABLE IF EXISTS \(meta.database).\(meta.table)"
+            connection.logger.info("\(query)")
             return connection.command(sql: query)
         }
     }
