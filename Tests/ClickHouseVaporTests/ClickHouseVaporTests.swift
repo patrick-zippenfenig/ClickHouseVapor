@@ -43,11 +43,11 @@ final class ClickHouseVaporTests: XCTestCase {
         let _ = XCTAssertNoThrow(try app.clickHouse.ping().wait())
     }
     
-    public func testModel() throws {
+    public func testModel() {
         let app = Application(.testing)
         defer { app.shutdown() }
         try! app.configureClickHouseDatabases()
-        app.logger.logLevel = .debug
+        app.logger.logLevel = .trace
         
         let model = TestModel()
         
@@ -60,10 +60,10 @@ final class ClickHouseVaporTests: XCTestCase {
         model.timestamp = [ 100, 200, 300 ]
         model.temperature = [ 11.1, 10.4, 8.9 ]
 
-        try TestModel.createTable(on: app.clickHouse).wait()
-        try model.insert(on: app.clickHouse).wait()
+        try! TestModel.createTable(on: app.clickHouse).wait()
+        try! model.insert(on: app.clickHouse).wait()
         
-        let model2 = try TestModel.select(on: app.clickHouse).wait()
+        let model2 = try! TestModel.select(on: app.clickHouse).wait()
         
         XCTAssertEqual(model.temperature, model2.temperature)
         XCTAssertEqual(model.id, model2.id)

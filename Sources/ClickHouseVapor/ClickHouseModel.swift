@@ -70,10 +70,15 @@ extension ClickHouseModel {
         
         let onCluster = tableMeta.cluster.map { "ON CLUSTER \($0)" } ?? ""
         
+        let engineReplicated = "ReplicatedReplacingMergeTree('/clickhouse/{cluster}/tables/{database}.{table}/{shard}', '{replica}')"
+        let engineNormal = "ReplacingMergeTree()"
+        
+        let engine = tableMeta.cluster == nil ? engineNormal : engineReplicated
+        
         var query =
         """
         CREATE TABLE IF NOT EXISTS \(database).\(tableName) \(onCluster) (\(columnDescriptions))
-        ENGINE = ReplicatedReplacingMergeTree('/clickhouse/{cluster}/tables/\(database).\(tableName)/{shard}', '{replica}')
+        ENGINE = \(engine)
         PRIMARY KEY (\(ids.joined(separator: ",")))
         """
         if let partitionBy = partitionBy.first {
@@ -83,7 +88,12 @@ extension ClickHouseModel {
         
         connection.logger.debug("\(query)")
         
-        return connection.query(sql: query).transform(to: ())
+        if tableMeta.cluster != nil {
+            // cluster operation, return some information
+            return connection.query(sql: query).transform(to: ())
+        } else {
+            return connection.command(sql: query)
+        }
     }
     
     public func insert(on connection: ClickHouseConnectionProtocol, table: String? = nil) throws  -> EventLoopFuture<Void> {
