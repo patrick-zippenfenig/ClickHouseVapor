@@ -11,7 +11,7 @@ extension Application {
     }
 }
 
-public struct TestModel : ClickHouseModel {
+public class TestModel : ClickHouseModel {
     @Field(key: "timestamp", isPrimary: true, isOrderBy: true, partitionBy: true)
     var timestamp: [Int64]
     
@@ -24,7 +24,7 @@ public struct TestModel : ClickHouseModel {
     @Field(key: "temperature_hourly_something")
     var temperature: [Float]
     
-    public init() {
+    required public init() {
         
     }
     
