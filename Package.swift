@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "ClickHouseVapor",
+    platforms: [.macOS(.v10_15)],
     products: [
         .library(
             name: "ClickHouseVapor",
