@@ -12,6 +12,18 @@ import ClickHouseNIO
 
 extension ClickHouseConnection: ConnectionPoolItem { }
 
+/// TODO maybe move to underlying adapter
+public protocol ClickHouseConnectionProtocol {
+    var eventLoop: EventLoop { get }
+    var logger: Logger { get }
+    
+    func ping() -> EventLoopFuture<Void>
+    func query(sql: String) -> EventLoopFuture<ClickHouseQueryResult>
+    func command(sql: String) -> EventLoopFuture<Void>
+    func insert(into table: String, data: [ClickHouseColumn]) -> EventLoopFuture<Void>
+}
+
+/// TODO expose requestTimeout and maxConnectionsPerEventLoop in configuration
 public final class ClickHouseConnectionSource: ConnectionPoolSource {
     private let configuration: ClickHouseConfiguration
 
@@ -75,7 +87,15 @@ extension Application {
     }
 }
 
-extension Application.ClickHouse {
+extension Application.ClickHouse: ClickHouseConnectionProtocol {
+    public var eventLoop: EventLoop {
+        return application.eventLoopGroup.next()
+    }
+    
+    public var logger: Logger {
+        return application.logger
+    }
+    
     public func ping() -> EventLoopFuture<Void> {
         pool.withConnection {
             $0.ping()
@@ -113,7 +133,15 @@ extension Request {
     }
 }
 
-extension Request.ClickHouse {
+extension Request.ClickHouse: ClickHouseConnectionProtocol {
+    public var eventLoop: EventLoop {
+        return request.eventLoop
+    }
+    
+    public var logger: Logger {
+        return request.logger
+    }
+    
     public func ping() -> EventLoopFuture<Void> {
         self.request.application.clickHouse.pool.withConnection {
             $0.ping()
