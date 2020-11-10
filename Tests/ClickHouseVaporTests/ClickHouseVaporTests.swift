@@ -52,7 +52,7 @@ final class ClickHouseVaporTests: XCTestCase {
         let model = TestModel()
         
         // drop table to ensure unit test
-        XCTAssertNoThrow(try TestModel.deleteTable(on: app.clickHouse).wait())
+        try! TestModel.deleteTable(on: app.clickHouse).wait()
 
         
         model.id = [ "x010", "ax51", "cd22" ]

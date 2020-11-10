@@ -90,7 +90,7 @@ extension ClickHouseModel {
         }
     }
     
-    public static func createTable(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil) throws -> EventLoopFuture<Void> {
+    public static func createTable(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil) -> EventLoopFuture<Void> {
         let fields = Self.init().properties
         let meta = table ?? tableMeta
         let query = meta.createTableQuery(fields: fields)
@@ -104,7 +104,7 @@ extension ClickHouseModel {
         }
     }
     
-    public func insert(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil) throws  -> EventLoopFuture<Void> {
+    public func insert(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil)  -> EventLoopFuture<Void> {
         let fields = properties
         let meta = table ?? Self.tableMeta
         let data = fields.compactMap {
@@ -119,7 +119,7 @@ extension ClickHouseModel {
     }
     
     /// Delete this table. This operation cannot be undone.
-    public static func deleteTable(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil) throws -> EventLoopFuture<Void> {
+    public static func deleteTable(on connection: ClickHouseConnectionProtocol, table: TableModelMeta? = nil) -> EventLoopFuture<Void> {
         let meta = table ?? Self.tableMeta
         if let cluster = meta.cluster {
             let query = "DROP TABLE IF EXISTS \(meta.database).\(meta.table) ON CLUSTER \(cluster)"
@@ -151,7 +151,7 @@ extension ClickHouseModel {
     
     /// Query data from database.
     /// If final ist set to true, all duplicate merges are ensured, but perfmrance suffers
-    public static func select(on connection: ClickHouseConnectionProtocol, fields: [String]? = nil, final: Bool = false, where whereClause: String? = nil, order: String? = nil, limit: Int? = nil, offset: Int? = nil, table: TableModelMeta? = nil) throws -> EventLoopFuture<Self> {
+    public static func select(on connection: ClickHouseConnectionProtocol, fields: [String]? = nil, final: Bool = false, where whereClause: String? = nil, order: String? = nil, limit: Int? = nil, offset: Int? = nil, table: TableModelMeta? = nil) -> EventLoopFuture<Self> {
         
         let meta = table ?? tableMeta
         let fields = fields ?? Self.init().properties.map { "`\($0.key)`" }
