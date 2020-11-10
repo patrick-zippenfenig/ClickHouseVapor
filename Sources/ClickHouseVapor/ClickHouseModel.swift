@@ -63,8 +63,8 @@ extension ClickHouseModel {
         return properties.first(where: {$0.count > 0})?.count ?? 0
     }
     
-    /// Only include column rows where the isIncluded array is true. This is equivalent to the IDL `where` function.
-    /*public func filter(_ isIncluded: [Bool]) {
+    /// Only include column rows where the isIncluded array is true.
+    public func filter(_ isIncluded: [Bool]) {
         precondition(isIncluded.count == count)
         properties.forEach {
             $0.filter(isIncluded)
@@ -73,16 +73,16 @@ extension ClickHouseModel {
     
     public func append(_ other: Self) {
         zip(properties, other.properties).forEach {
-            $0.0.append($0.1.getRawDataArray())
+            $0.0.append($0.1.getClickHouseArray())
         }
     }
     
-    /// Reserve space in all data coolumns. Also allocates arrays internally if required.
+    /// Reserve space in all data columns
     public func reserveCapacity(_ capacity: Int) {
         properties.forEach {
             $0.reserveCapacity(capacity)
         }
-    }*/
+    }
     
     var properties: [ClickHouseColumnConvertible] {
         return Mirror(reflecting: self).children.compactMap {
@@ -149,19 +149,16 @@ extension ClickHouseModel {
         }
     }
     
-    // select: [KeyPath<Self, ClickHouseColumnConvertible>]? = nil,
+    /// Query data from database.
     /// If final ist set to true, all duplicate merges are ensured, but perfmrance suffers
-    public static func select(on connection: ClickHouseConnectionProtocol, final: Bool = false, where whereClause: String? = nil, order: String? = nil, limit: Int? = nil, table: TableModelMeta? = nil) throws -> EventLoopFuture<Self> {
+    public static func select(on connection: ClickHouseConnectionProtocol, fields: [String]? = nil, final: Bool = false, where whereClause: String? = nil, order: String? = nil, limit: Int? = nil, offset: Int? = nil, table: TableModelMeta? = nil) throws -> EventLoopFuture<Self> {
         
-        let this = Self.init()
-        let properties = this.properties
-        let selectFields = /*select?.map({this[keyPath: $0]}) ??*/ properties
-        
-        let tableName = table?.table ?? Self.tableMeta.table
+        let meta = table ?? tableMeta
+        let fields = fields ?? Self.init().properties.map { "`\($0.key)`" }
         
         var sql = "SELECT "
-        sql += selectFields.map { "`\($0.key)`" }.joined(separator: ",")
-        sql += "FROM " + Self.tableMeta.database.description + "." + tableName.description
+        sql += fields.joined(separator: ",")
+        sql += "FROM \(meta.database).\(meta.table)"
         if final {
             sql += " FINAL"
         }
@@ -173,8 +170,10 @@ extension ClickHouseModel {
         }
         if let limit = limit {
             sql += " LIMIT \(limit)"
+            if let offset = offset {
+                sql += ",\(offset)"
+            }
         }
-        return Self.select(on: connection, sql: sql)
+        return select(on: connection, sql: sql)
     }
 }
-

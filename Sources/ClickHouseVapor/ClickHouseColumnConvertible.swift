@@ -17,12 +17,12 @@ public protocol ClickHouseColumnConvertible : Codable, AnyObject {
     var count: Int { get }
     
     func setClickHouseArray(data: [ClickHouseDataType]) throws
-    //func reserveCapacity(_ capacity: Int)
-    //func append(_ other: [ClickHouseDataType])
+    func reserveCapacity(_ capacity: Int)
+    func append(_ other: [ClickHouseDataType])
     func getClickHouseArray() -> [ClickHouseDataType]
     func clickHouseTypeName() -> ClickHouseTypeName
-    /// Only include column rows where the isIncluded array is true. This is equivalent to the IDL `where` function.
-    //func filter(_ isIncluded: [Bool])
+    /// Only include column rows where the isIncluded array is true.
+    func filter(_ isIncluded: [Bool])
 }
 
 public protocol ClickHouseColumnConvertibleTyped : ClickHouseColumnConvertible {
@@ -44,24 +44,25 @@ extension ClickHouseColumnConvertibleTyped {
         self.wrappedValue = array
     }
     
-    /// Only include column rows where the isIncluded array is true. This is equivalent to the IDL `where` function.
-    /*public func filter(_ isIncluded: [Bool]) {
+    /// Only include column rows where the isIncluded array is true.
+    public func filter(_ isIncluded: [Bool]) {
         wrappedValue = wrappedValue.filtered(isIncluded)
-    }*/
+    }
     
     public var count: Int {
         return wrappedValue.count
     }
     
-    /*ublic func reserveCapacity(_ capacity: Int) {
+    public func reserveCapacity(_ capacity: Int) {
         wrappedValue.reserveCapacity(capacity)
     }
+    
     public func append(_ other: [ClickHouseDataType]) {
         guard let array = other as? [Value] else {
             fatalError("Cannot append arrays of different datatypes in column \(key)")
         }
         wrappedValue += array
-    }*/
+    }
     public func getClickHouseArray() -> [ClickHouseDataType] {
         return wrappedValue
     }
@@ -105,5 +106,21 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(wrappedValue, forKey: .wrappedValue)
+    }
+}
+
+extension Array {
+    /// Only include column rows where the isIncluded array is true
+    func filtered(_ isIncluded: [Bool]) -> Self {
+        precondition(count == isIncluded.count)
+        var arr = Self.init()
+        let count = isIncluded.reduce(0, { $0 + ($1 ? 1 : 0) })
+        arr.reserveCapacity(count)
+        for (i, include) in isIncluded.enumerated() {
+            if include {
+                arr.append(self[i])
+            }
+        }
+        return arr
     }
 }
