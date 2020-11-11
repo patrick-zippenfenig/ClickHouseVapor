@@ -7,7 +7,15 @@ extension Application {
         let ip = ProcessInfo.processInfo.environment["CLICKHOUSE_SERVER"] ?? "172.25.101.30"
         let user = ProcessInfo.processInfo.environment["CLICKHOUSE_USER"] ?? "default"
         let password = ProcessInfo.processInfo.environment["CLICKHOUSE_PASSWORD"] ?? "admin"
-        clickHouse.configuration = try ClickHousePoolConfiguration(hostname: ip, port: 9000, user: user, password: password, database: "default")
+        clickHouse.configuration = try ClickHousePoolConfiguration(
+            hostname: ip,
+            port: 9000,
+            user: user,
+            password: password,
+            database: "default",
+            maxConnectionsPerEventLoop: 2,
+            requestTimeout: .seconds(10)
+        )
     }
 }
 
@@ -21,7 +29,7 @@ public class TestModel : ClickHouseModel {
     @Field(key: "fixed", fixedStringLen: 10)
     var fixed: [ String ]
     
-    @Field(key: "temperature_hourly_something")
+    @Field(key: "temperature")
     var temperature: [Float]
     
     required public init() {
@@ -74,6 +82,20 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model.id, model2.id)
         XCTAssertEqual(["", "123456", "1234567890"], model2.fixed)
         XCTAssertEqual(model.timestamp, model2.timestamp)
+        
+        let filtered = try! TestModel.select(
+            on: app.clickHouse,
+            fields: ["timestamp", "stationID"],
+            where: "temperature > 10",
+            order: "timestamp DESC",
+            limit: 10,
+            offset: 0
+        ).wait()
+        
+        XCTAssertTrue(filtered.temperature.isEmpty, "temperature array was not selected, is supposed to be empty")
+        XCTAssertEqual(filtered.id, ["ax51", "x010"])
+        XCTAssertEqual(filtered.timestamp, [200, 100])
+        
         
         /// Raw select query, that gets applied to
         let model3 = try! TestModel.select(on: app.clickHouse, sql: "SELECT timestamp, stationID FROM default.test").wait()

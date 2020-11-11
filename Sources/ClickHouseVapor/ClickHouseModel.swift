@@ -118,7 +118,7 @@ extension ClickHouseModel {
         
         var sql = "SELECT "
         sql += fields.joined(separator: ",")
-        sql += "FROM \(engine.tableWithDatabase)"
+        sql += " FROM \(engine.tableWithDatabase)"
         if final {
             sql += " FINAL"
         }
@@ -129,9 +129,10 @@ extension ClickHouseModel {
             sql += " ORDER BY \(order)"
         }
         if let limit = limit {
-            sql += " LIMIT \(limit)"
             if let offset = offset {
-                sql += ",\(offset)"
+                sql += " LIMIT \(offset),\(limit)"
+            } else {
+                sql += " LIMIT \(limit)"
             }
         }
         return select(on: connection, sql: sql)
