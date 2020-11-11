@@ -15,7 +15,7 @@ Features:
 
 ## Installation:
 
-1. Add `ClickHouseNIO` as a dependency to your `Package.swift`
+1. Add `ClickHouseVapor` as a dependency to your `Package.swift`
 
 ```swift
   dependencies: [
@@ -34,7 +34,9 @@ $ swift build
 
 ## Usage
 
-1. Configure the connection credentials with a Vapor 4 appliation. Usually this is done in `config.swift`.
+1. Configure the connection credentials with a Vapor 4 application. Usually this is done in `config.swift`.
+
+Note: `maxConnectionsPerEventLoop` controls the number of connections per thread. If you have 4 CPU cores and Vapor is using 4 eventLoops, 8 connections will be used. `requestTimeout` is the timeout to establish a connection. It does not limit query runtime.
 
 ```swift
 import ClickHouseVapor
@@ -53,7 +55,7 @@ app.clickHouse.configuration = try ClickHousePoolConfiguration(
 )
 ```
 
-2. Define a table with fields and an engine.
+1. Define a table with fields and an engine.
 
 ```swift
 public class TestModel : ClickHouseModel {
@@ -119,7 +121,7 @@ let result2 = try! TestModel.select(
 ).wait()
 
 print(result2.id) // ["ax51", "x010"]
-print(result2.timetamp) //  [200, 100]
+print(result2.timestamp) //  [200, 100]
 
 // Perform raw queries, but assign the result to TestModel
 let sql = "SELECT timestamp, stationID FROM default.test"
@@ -128,6 +130,7 @@ let result2 = try! TestModel.select(on: app.clickHouse, sql: sql).wait()
 
 
 ## TODO
+- Consider query timeouts
 - Implement more engines
 - Review and declare version 1.0.0
 
