@@ -1,6 +1,6 @@
 # ClickHouseVapor
 
-![Swift 5](https://img.shields.io/badge/Swift-5-orange.svg) ![SPM](https://img.shields.io/badge/SPM-compatible-green.svg) ![Platforms](https://img.shields.io/badge/Platforms-macOS%20Linux-green.svg) [![CircleCI](https://circleci.com/gh/patrick-zippenfenig/ClickHouseVapor/tree/main.svg?style=svg)](https://circleci.com/gh/patrick-zippenfenig/ClickHouseVapor/tree/main)
+![Swift 5](https://img.shields.io/badge/Swift-5-orange.svg) ![SPM](https://img.shields.io/badge/SPM-compatible-green.svg) ![Platforms](https://img.shields.io/badge/Platforms-macOS%20Linux-green.svg) [![codebeat badge](https://codebeat.co/badges/d4500aa3-30f6-471a-89ae-924cd14aed17)](https://codebeat.co/projects/github-com-patrick-zippenfenig-clickhousevapor-main) [![CircleCI](https://circleci.com/gh/patrick-zippenfenig/ClickHouseVapor/tree/main.svg?style=svg)](https://circleci.com/gh/patrick-zippenfenig/ClickHouseVapor/tree/main)
 
 A simple column-oriented ORM for the [ClickHouse](https://clickhouse.tech) database in Swift. 
 
