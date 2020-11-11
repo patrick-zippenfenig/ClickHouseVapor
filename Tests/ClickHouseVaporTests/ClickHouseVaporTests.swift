@@ -7,12 +7,12 @@ extension Application {
         let ip = ProcessInfo.processInfo.environment["CLICKHOUSE_SERVER"] ?? "172.25.101.30"
         let user = ProcessInfo.processInfo.environment["CLICKHOUSE_USER"] ?? "default"
         let password = ProcessInfo.processInfo.environment["CLICKHOUSE_PASSWORD"] ?? "admin"
-        clickHouse.configuration = try ClickHouseConfiguration(hostname: ip, port: 9000, user: user, password: password, database: "default")
+        clickHouse.configuration = try ClickHousePoolConfiguration(hostname: ip, port: 9000, user: user, password: password, database: "default")
     }
 }
 
 public class TestModel : ClickHouseModel {
-    @Field(key: "timestamp", isPrimary: true, isOrderBy: true, partitionBy: true)
+    @Field(key: "timestamp", isPrimary: true, isOrderBy: true)
     var timestamp: [Int64]
     
     @Field(key: "stationID", isPrimary: true, isOrderBy: true)
@@ -28,8 +28,13 @@ public class TestModel : ClickHouseModel {
         
     }
     
-    public static var tableMeta: TableModelMeta {
-        return TableModelMeta(database: "default", table: "test", cluster: nil)
+    public static var engine: ClickHouseEngine {
+        return ClickHouseEngineReplacingMergeTree(
+            table: "test",
+            database: nil,
+            cluster: nil,
+            partitionBy: "toYYYYMM(toDateTime(timestamp))"
+        )
     }
 }
 
@@ -40,7 +45,7 @@ final class ClickHouseVaporTests: XCTestCase {
         defer { app.shutdown() }
         try! app.configureClickHouseDatabases()
         
-        let _ = XCTAssertNoThrow(try app.clickHouse.ping().wait())
+        XCTAssertNoThrow(try app.clickHouse.ping().wait())
     }
     
     public func testModel() {
@@ -69,6 +74,12 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model.id, model2.id)
         XCTAssertEqual(["", "123456", "1234567890"], model2.fixed)
         XCTAssertEqual(model.timestamp, model2.timestamp)
+        
+        /// Raw select query, that gets applied to
+        let model3 = try! TestModel.select(on: app.clickHouse, sql: "SELECT timestamp, stationID FROM default.test").wait()
+        XCTAssertTrue(model3.temperature.isEmpty, "temperature array was not selected, is supposed to be empty")
+        XCTAssertEqual(model3.id, model2.id)
+        XCTAssertEqual(model3.timestamp, model2.timestamp)
     }
 
     static var allTests = [

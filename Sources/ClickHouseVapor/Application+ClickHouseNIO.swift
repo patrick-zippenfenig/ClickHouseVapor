@@ -8,11 +8,9 @@
 import Vapor
 import ClickHouseNIO
 
-@_exported import struct ClickHouseNIO.ClickHouseConfiguration
+@_exported import struct NIO.TimeAmount
 
-extension ClickHouseConnection: ConnectionPoolItem { }
-
-/// TODO maybe move to underlying adapter
+/// Vapor `Application.ClickHouse` and `Request.ClickHouse` implement this procotol to be used later for queries
 public protocol ClickHouseConnectionProtocol {
     var eventLoop: EventLoop { get }
     var logger: Logger { get }
@@ -23,15 +21,32 @@ public protocol ClickHouseConnectionProtocol {
     func insert(into table: String, data: [ClickHouseColumn]) -> EventLoopFuture<Void>
 }
 
-/// TODO expose requestTimeout and maxConnectionsPerEventLoop in configuration
-public final class ClickHouseConnectionSource: ConnectionPoolSource {
-    private let configuration: ClickHouseConfiguration
-
-    public init(configuration: ClickHouseConfiguration) {
-        self.configuration = configuration
+/// ClickHouse hostname, credentials and pool configuration
+public struct ClickHousePoolConfiguration {
+    public let configuration: ClickHouseConfiguration
+    public let maxConnectionsPerEventLoop: Int
+    public let requestTimeout: TimeAmount
+    
+    public init(hostname: String = "localhost",
+                port: Int = ClickHouseConnection.defaultPort,
+                user: String? = nil,
+                password: String? = nil,
+                database: String? = nil,
+                maxConnectionsPerEventLoop: Int = 1,
+                requestTimeout: TimeAmount = .seconds(10)
+    ) throws {
+        self.configuration = try ClickHouseConfiguration(hostname: hostname, port: port, user: user, password: password, database: database)
+        self.maxConnectionsPerEventLoop = maxConnectionsPerEventLoop
+        self.requestTimeout = requestTimeout
     }
+}
+
+/// Make ClickHouse Connection work with the connection pool
+extension ClickHouseConnection: ConnectionPoolItem { }
+
+extension ClickHouseConfiguration: ConnectionPoolSource {
     public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<ClickHouseConnection> {
-        return ClickHouseConnection.connect(configuration: configuration, on: eventLoop, logger: logger)
+        return ClickHouseConnection.connect(configuration: self, on: eventLoop, logger: logger)
     }
 }
 
@@ -43,10 +58,10 @@ extension Application {
 
     public struct ClickHouse {
         struct ConfigurationKey: StorageKey {
-            typealias Value = ClickHouseConfiguration
+            typealias Value = ClickHousePoolConfiguration
         }
 
-        public var configuration: ClickHouseConfiguration? {
+        public var configuration: ClickHousePoolConfiguration? {
             get {
                 self.application.storage[ConfigurationKey.self]
             }
@@ -57,10 +72,10 @@ extension Application {
 
 
         struct PoolKey: StorageKey, LockKey {
-            typealias Value = EventLoopGroupConnectionPool<ClickHouseConnectionSource>
+            typealias Value = EventLoopGroupConnectionPool<ClickHouseConfiguration>
         }
 
-        internal var pool: EventLoopGroupConnectionPool<ClickHouseConnectionSource> {
+        internal var pool: EventLoopGroupConnectionPool<ClickHouseConfiguration> {
             if let existing = self.application.storage[PoolKey.self] {
                 return existing
             } else {
@@ -71,8 +86,9 @@ extension Application {
                     fatalError("ClickHouse not configured. Use app.clickHouse.configuration = ...")
                 }
                 let new = EventLoopGroupConnectionPool(
-                    source: ClickHouseConnectionSource(configuration: configuration),
-                    maxConnectionsPerEventLoop: 2,
+                    source: configuration.configuration,
+                    maxConnectionsPerEventLoop: configuration.maxConnectionsPerEventLoop,
+                    requestTimeout: configuration.requestTimeout,
                     logger: self.application.logger,
                     on: self.application.eventLoopGroup
                 )
