@@ -64,12 +64,14 @@ extension ClickHouseModel {
         }
     }
     
+    /// Insert data into table. Insert will fail if columns differ in the amount of elements.
     public func insert(on connection: ClickHouseConnectionProtocol, engine: ClickHouseEngine? = nil)  throws -> EventLoopFuture<Void> {
         let fields = properties
         let engine = engine ?? Self.engine
         
-        guard let rowCount = fields.first?.count else {
-            // no columns -> nothing to do
+        let rowCount = self.count
+        if  rowCount == 0 {
+            // no rows or no columns -> nothing to do
             return connection.eventLoop.makeSucceededFuture(())
         }
         
@@ -80,6 +82,7 @@ extension ClickHouseModel {
             }
             return rowCount == 0 ? nil : ClickHouseColumn(field.key, field.getClickHouseArray())
         }
+        
         return connection.insert(into: engine.tableWithDatabase, data: data)
     }
     

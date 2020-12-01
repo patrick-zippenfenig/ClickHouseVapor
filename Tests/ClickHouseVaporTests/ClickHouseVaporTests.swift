@@ -52,7 +52,8 @@ final class ClickHouseVaporTests: XCTestCase {
     static var allTests = [
         ("testPing", testPing),
         ("testModel", testModel),
-        ("testModelMissesColumns", testModelMissesColumns)
+        ("testDifferingRowsInsert", testDifferingRowsInsert),
+        ("testEmptyModelInsert", testEmptyModelInsert)
     ]
     
     func testPing() {
@@ -111,8 +112,8 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model3.timestamp, model2.timestamp)
     }
     
-    /// model should fail if insert with empty columns is tried
-    public func testModelMissesColumns() {
+    /// insert should fail if some columns are not set, but others are
+    public func testDifferingRowsInsert() {
         let app = Application(.testing)
         defer { app.shutdown() }
         try! app.configureClickHouseDatabases()
@@ -125,11 +126,40 @@ final class ClickHouseVaporTests: XCTestCase {
 
         
         model.id = [ "x010", "ax51", "cd22" ]
-        model.fixed = [ "", "123456", "12345678901234" ]
+        model.fixed = [ "", "12345678901234" ]
+        model.timestamp = [ 100, 200, 300 ]
         model.temperature = [ 11.1, 10.4, 8.9 ]
 
         try! TestModel.createTable(on: app.clickHouse).wait()
-        XCTAssertThrowsError(try model.insert(on: app.clickHouse).wait(), "\(ClickHouseVaporError.mismatchingRowCount(count: 0, expected: 3))")
+        
+        var thrownError : Error?
+        // insert should fail if one tries to insert columns with different amount of rows
+        XCTAssertThrowsError(try model.insert(on: app.clickHouse).wait()) {
+            thrownError = $0
+        }
+        // check that we get correct error message
+        XCTAssertEqual(thrownError as! ClickHouseVaporError, ClickHouseVaporError.mismatchingRowCount(count: 2, expected: 3))
     }
+    
+    
+    /// insert should not fail if the complete model is empty
+    public func testEmptyModelInsert() {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try! app.configureClickHouseDatabases()
+        app.logger.logLevel = .trace
+        
+        let model = TestModel()
+        
+        // drop table to ensure unit test
+        try! TestModel.deleteTable(on: app.clickHouse).wait()
+        
+        try! TestModel.createTable(on: app.clickHouse).wait()
+        
+        // insert should not fail if all columns are empty
+        XCTAssertNoThrow(try model.insert(on: app.clickHouse).wait())
+    }
+    
+    
 
 }
