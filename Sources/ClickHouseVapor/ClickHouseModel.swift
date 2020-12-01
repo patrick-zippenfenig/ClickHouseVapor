@@ -64,17 +64,22 @@ extension ClickHouseModel {
         }
     }
     
-    public func insert(on connection: ClickHouseConnectionProtocol, engine: ClickHouseEngine? = nil)  -> EventLoopFuture<Void> {
+    public func insert(on connection: ClickHouseConnectionProtocol, engine: ClickHouseEngine? = nil)  throws -> EventLoopFuture<Void> {
         let fields = properties
         let engine = engine ?? Self.engine
-        let data = fields.compactMap {
-            return $0.count == 0 ? nil : ClickHouseColumn($0.key, $0.getClickHouseArray())
-        }
-        guard data.count > 0 else {
-            // no values -> nothing to do
+        
+        guard let rowCount = fields.first?.count else {
+            // no columns -> nothing to do
             return connection.eventLoop.makeSucceededFuture(())
         }
         
+        let data = try fields.compactMap { field -> ClickHouseColumn? in
+            // check that all columns have the same amount of rows
+            guard field.count == rowCount else {
+                throw ClickHouseVaporError.mismatchingRowCount(count: field.count, expected: rowCount)
+            }
+            return rowCount == 0 ? nil : ClickHouseColumn(field.key, field.getClickHouseArray())
+        }
         return connection.insert(into: engine.tableWithDatabase, data: data)
     }
     

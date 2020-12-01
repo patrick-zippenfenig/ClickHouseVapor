@@ -6,5 +6,6 @@
 //
 
 public enum ClickHouseVaporError: Error {
-    case missmatchingDataType(columnName: String)
+    case mismatchingDataType(columnName: String)
+    case mismatchingRowCount(count: Int, expected: Int)
 }

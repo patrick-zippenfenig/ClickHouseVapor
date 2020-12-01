@@ -40,7 +40,7 @@ extension ClickHouseColumnConvertibleTyped {
     
     public func setClickHouseArray(_ data: [ClickHouseDataType]) throws {
         guard let array = data as? [Value] else {
-            throw ClickHouseVaporError.missmatchingDataType(columnName: key)
+            throw ClickHouseVaporError.mismatchingDataType(columnName: key)
         }
         self.wrappedValue = array
     }
