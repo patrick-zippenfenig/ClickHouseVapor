@@ -48,6 +48,13 @@ public class TestModel : ClickHouseModel {
 
 
 final class ClickHouseVaporTests: XCTestCase {
+    
+    static var allTests = [
+        ("testPing", testPing),
+        ("testModel", testModel),
+        ("testModelMissesColumns", testModelMissesColumns)
+    ]
+    
     func testPing() {
         let app = Application(.testing)
         defer { app.shutdown() }
@@ -103,8 +110,26 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model3.id, model2.id)
         XCTAssertEqual(model3.timestamp, model2.timestamp)
     }
+    
+    /// model should fail if insert with empty columns is tried
+    public func testModelMissesColumns() {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try! app.configureClickHouseDatabases()
+        app.logger.logLevel = .trace
+        
+        let model = TestModel()
+        
+        // drop table to ensure unit test
+        try! TestModel.deleteTable(on: app.clickHouse).wait()
 
-    static var allTests = [
-        ("testPing", testPing),
-    ]
+        
+        model.id = [ "x010", "ax51", "cd22" ]
+        model.fixed = [ "", "123456", "12345678901234" ]
+        model.temperature = [ 11.1, 10.4, 8.9 ]
+
+        try! TestModel.createTable(on: app.clickHouse).wait()
+        XCTAssertThrowsError(try model.insert(on: app.clickHouse).wait(), "\(ClickHouseVaporError.mismatchingRowCount(count: 0, expected: 3))")
+    }
+
 }
