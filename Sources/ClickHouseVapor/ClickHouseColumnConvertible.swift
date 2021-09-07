@@ -12,6 +12,7 @@ public protocol ClickHouseColumnConvertible : AnyObject {
     var key: String         { get }
     var isPrimary: Bool     { get }
     var isOrderBy: Bool     { get }
+    var isLowCardinality: Bool { get }
     /// number of elements inside the data column array
     var count: Int { get }
     
@@ -80,16 +81,24 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
     public var wrappedValue: [Value]
     public let isPrimary: Bool
     public let isOrderBy: Bool
+    public let isLowCardinality: Bool
     public let fixedStringLen: Int?
     
     public var projectedValue: Field<Value> {
         self
     }
 
-    public init(key: String, isPrimary: Bool = false, isOrderBy: Bool = false, fixedStringLen: Int? = nil) {
+    public init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false,
+        fixedStringLen: Int? = nil
+    ) {
         self.key = key
         self.isPrimary = isPrimary
         self.isOrderBy = isOrderBy
+        self.isLowCardinality = isLowCardinality
         self.fixedStringLen = fixedStringLen
         self.wrappedValue = []
     }

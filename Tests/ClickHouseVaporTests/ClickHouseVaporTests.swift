@@ -23,10 +23,10 @@ public class TestModel : ClickHouseModel {
     @Field(key: "timestamp", isPrimary: true, isOrderBy: true)
     var timestamp: [Int64]
     
-    @Field(key: "stationID", isPrimary: true, isOrderBy: true)
+    @Field(key: "stationID", isPrimary: true, isOrderBy: true, isLowCardinality: true)
     var id: [String]
     
-    @Field(key: "fixed", fixedStringLen: 10)
+    @Field(key: "fixed", isLowCardinality: true, fixedStringLen: 10)
     var fixed: [ String ]
     
     @Field(key: "temperature")
@@ -159,7 +159,4 @@ final class ClickHouseVaporTests: XCTestCase {
         // insert should not fail if all columns are empty
         XCTAssertNoThrow(try model.insert(on: app.clickHouse).wait())
     }
-    
-    
-
 }

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import enum ClickHouseNIO.ClickHouseTypeName
 
 /// Abstract a clickhouse storage engine. For example the `ReplacingMergeTree` requires special CREATE syntax.
 /// This could also be used to
@@ -57,7 +58,11 @@ public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
         assert(order.count >= 1)
 
         let columnDescriptions = columns.map { field -> String in
-          return "\(field.key) \(field.clickHouseTypeName().string)"
+            if field.isLowCardinality && field.clickHouseTypeName().supportsLowCardinality {
+                return "\(field.key) LowCardinality(\(field.clickHouseTypeName().string))"
+            } else {
+                return "\(field.key) \(field.clickHouseTypeName().string)"
+            }
         }.joined(separator: ",")
 
         let onCluster = cluster.map { "ON CLUSTER \($0)" } ?? ""
@@ -80,3 +85,37 @@ public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
 }
 
 
+extension ClickHouseTypeName {
+    var supportsLowCardinality: Bool {
+        // basically all numerical data types except for Decimal support LowCardinality
+        // https://clickhouse.tech/docs/en/sql-reference/data-types/lowcardinality/
+        switch self {
+        case .float:
+            return true
+        case .float64:
+            return true
+        case .int8:
+            return true
+        case .int16:
+            return true
+        case .int32:
+            return true
+        case .int64:
+            return true
+        case .uint8:
+            return true
+        case .uint16:
+            return true
+        case .uint32:
+            return true
+        case .uint64:
+            return true
+        case .uuid:
+            return false
+        case .fixedString(_):
+            return true
+        case .string:
+            return true
+        }
+    }
+}
