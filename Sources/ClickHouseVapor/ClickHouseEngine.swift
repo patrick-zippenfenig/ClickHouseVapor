@@ -13,13 +13,13 @@ import enum ClickHouseNIO.ClickHouseTypeName
 public protocol ClickHouseEngine {
     /// Generate a SQL query to create the table using the defined model columns
     func createTableQuery(columns: [ClickHouseColumnConvertible]) -> String
-    
+
     /// Set if operations run on a cluster. In this case, the create statement will return some query data.
     var cluster: String? { get }
-    
+
     /// Name of the table
     var table: String { get }
-    
+
     /// Name of the database
     var database: String? { get }
 }
@@ -28,7 +28,7 @@ extension ClickHouseEngine {
     public var isUsingCluster: Bool {
         cluster != nil
     }
-    
+
     /// Returns the tablename and database name encoded with a dot
     public var tableWithDatabase: String {
         if let database = database {
@@ -43,7 +43,7 @@ public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
     public var database: String?
     public var cluster: String?
     public var partitionBy: String?
-    
+
     public init(table: String, database: String?, cluster: String?, partitionBy: String?) {
         self.table = table
         self.database = database
@@ -83,7 +83,6 @@ public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
         return query
     }
 }
-
 
 extension ClickHouseTypeName {
     var supportsLowCardinality: Bool {
