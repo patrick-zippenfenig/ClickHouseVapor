@@ -4,8 +4,6 @@
 
 A simple column-oriented ORM for the [ClickHouse](https://clickhouse.tech) database in Swift. 
 
-WARNING: This library has not yet declared a stable 1.0.0 release! There might be breaking interface changes at any time.
-
 Features:
 - Fixed datatype ORM
 - Connection pool
@@ -19,7 +17,7 @@ Features:
 
 ```swift
   dependencies: [
-    .package(url: "https://github.com/patrick-zippenfenig/ClickHouseVapor.git", from: "0.0.0")
+    .package(url: "https://github.com/patrick-zippenfenig/ClickHouseVapor.git", from: "1.0.0")
   ],
   targets: [
     .target(name: "MyApp", dependencies: ["ClickHouseVapor"])
@@ -129,11 +127,9 @@ let result2 = try! TestModel.select(on: app.clickHouse, sql: sql).wait()
 ```
 
 
-## TODO
-- Consider query timeouts
+## ToDo List
+- Query timeouts
 - Implement more engines
-- Review and declare version 1.0.0
-
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
