@@ -14,7 +14,7 @@ import ClickHouseNIO
 public protocol ClickHouseConnectionProtocol {
     var eventLoop: EventLoop { get }
     var logger: Logger { get }
-    
+
     func ping() -> EventLoopFuture<Void>
     func query(sql: String) -> EventLoopFuture<ClickHouseQueryResult>
     func command(sql: String) -> EventLoopFuture<Void>
@@ -26,7 +26,7 @@ public struct ClickHousePoolConfiguration {
     public let configuration: ClickHouseConfiguration
     public let maxConnectionsPerEventLoop: Int
     public let requestTimeout: TimeAmount
-    
+
     public init(hostname: String = "localhost",
                 port: Int = ClickHouseConnection.defaultPort,
                 user: String? = nil,
@@ -35,7 +35,13 @@ public struct ClickHousePoolConfiguration {
                 maxConnectionsPerEventLoop: Int = 1,
                 requestTimeout: TimeAmount = .seconds(10)
     ) throws {
-        self.configuration = try ClickHouseConfiguration(hostname: hostname, port: port, user: user, password: password, database: database)
+        self.configuration = try ClickHouseConfiguration(
+            hostname: hostname,
+            port: port,
+            user: user,
+            password: password,
+            database: database
+        )
         self.maxConnectionsPerEventLoop = maxConnectionsPerEventLoop
         self.requestTimeout = requestTimeout
     }
@@ -49,7 +55,6 @@ extension ClickHouseConfiguration: ConnectionPoolSource {
         return ClickHouseConnection.connect(configuration: self, on: eventLoop, logger: logger)
     }
 }
-
 
 extension Application {
     public var clickHouse: ClickHouse {
@@ -69,7 +74,6 @@ extension Application {
                 self.application.storage[ConfigurationKey.self] = newValue
             }
         }
-
 
         struct PoolKey: StorageKey, LockKey {
             typealias Value = EventLoopGroupConnectionPool<ClickHouseConfiguration>
@@ -107,37 +111,35 @@ extension Application.ClickHouse: ClickHouseConnectionProtocol {
     public var eventLoop: EventLoop {
         return application.eventLoopGroup.next()
     }
-    
+
     public var logger: Logger {
         return application.logger
     }
-    
+
     public func ping() -> EventLoopFuture<Void> {
         pool.withConnection {
             $0.ping()
         }
     }
-    
+
     public func query(sql: String) -> EventLoopFuture<ClickHouseQueryResult> {
         pool.withConnection {
             $0.query(sql: sql)
         }
     }
-    
+
     public func command(sql: String) -> EventLoopFuture<Void> {
         pool.withConnection {
             $0.command(sql: sql)
         }
     }
-    
+
     public func insert(into table: String, data: [ClickHouseColumn]) -> EventLoopFuture<Void> {
         pool.withConnection {
             $0.insert(into: table, data: data)
         }
     }
 }
-
-
 
 extension Request {
     public var clickHouse: ClickHouse {
@@ -153,29 +155,29 @@ extension Request.ClickHouse: ClickHouseConnectionProtocol {
     public var eventLoop: EventLoop {
         return request.eventLoop
     }
-    
+
     public var logger: Logger {
         return request.logger
     }
-    
+
     public func ping() -> EventLoopFuture<Void> {
         self.request.application.clickHouse.pool.withConnection {
             $0.ping()
         }
     }
-    
+
     public func query(sql: String) -> EventLoopFuture<ClickHouseQueryResult> {
         self.request.application.clickHouse.pool.withConnection {
             $0.query(sql: sql)
         }
     }
-    
+
     public func command(sql: String) -> EventLoopFuture<Void> {
         self.request.application.clickHouse.pool.withConnection {
             $0.command(sql: sql)
         }
     }
-    
+
     public func insert(into table: String, data: [ClickHouseColumn]) -> EventLoopFuture<Void> {
         self.request.application.clickHouse.pool.withConnection {
             $0.insert(into: table, data: data)
