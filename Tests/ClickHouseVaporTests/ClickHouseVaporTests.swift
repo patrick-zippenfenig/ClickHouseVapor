@@ -78,6 +78,13 @@ final class ClickHouseVaporTests: XCTestCase {
         model.fixed = [ "", "123456", "12345678901234" ]
         model.timestamp = [ 100, 200, 300 ]
         model.temperature = [ 11.1, 10.4, 8.9 ]
+        
+        let createQuery = TestModel.engine.createTableQuery(columns: model.properties)
+        XCTAssertEqual(createQuery, """
+            CREATE TABLE IF NOT EXISTS `test`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),temperature Float32)
+            ENGINE = ReplacingMergeTree()
+            PRIMARY KEY (timestamp,stationID) PARTITION BY (toYYYYMM(toDateTime(timestamp))) ORDER BY (timestamp,stationID)
+            """)
 
         try! TestModel.createTable(on: app.clickHouse).wait()
         try! model.insert(on: app.clickHouse).wait()

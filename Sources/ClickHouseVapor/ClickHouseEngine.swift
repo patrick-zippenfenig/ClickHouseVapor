@@ -77,9 +77,9 @@ public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
         PRIMARY KEY (\(ids.joined(separator: ",")))
         """
         if let partitionBy = partitionBy {
-          query += "PARTITION BY (\(partitionBy))"
+          query += " PARTITION BY (\(partitionBy))"
         }
-        query += "ORDER BY (\(order.joined(separator: ",")))"
+        query += " ORDER BY (\(order.joined(separator: ",")))"
         return query
     }
 }
