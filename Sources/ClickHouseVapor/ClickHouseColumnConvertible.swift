@@ -17,10 +17,10 @@ public protocol ClickHouseColumnConvertible: AnyObject {
     var count: Int { get }
 
     /// Set the query result to this column
-    func setClickHouseArray(_ data: [ClickHouseDataType]) throws
+    func setClickHouseArray(_ data: ClickHouseDataTypeArray) throws
     func reserveCapacity(_ capacity: Int)
-    func append(_ other: [ClickHouseDataType])
-    func getClickHouseArray() -> [ClickHouseDataType]
+    func append(_ other: ClickHouseDataTypeArray)
+    func getClickHouseArray() -> ClickHouseDataTypeArray
     func clickHouseTypeName() -> ClickHouseTypeName
     /// Only include column rows where the isIncluded array is true.
     func filter(_ isIncluded: [Bool])
@@ -39,7 +39,7 @@ extension ClickHouseColumnConvertibleTyped {
         return ClickHouseColumn(key, wrappedValue)
     }
 
-    public func setClickHouseArray(_ data: [ClickHouseDataType]) throws {
+    public func setClickHouseArray(_ data: ClickHouseDataTypeArray) throws {
         guard let array = data as? [Value] else {
             throw ClickHouseVaporError.mismatchingDataType(columnName: key)
         }
@@ -58,14 +58,14 @@ extension ClickHouseColumnConvertibleTyped {
         wrappedValue.reserveCapacity(capacity)
     }
 
-    public func append(_ other: [ClickHouseDataType]) {
+    public func append(_ other: ClickHouseDataTypeArray) {
         guard let array = other as? [Value] else {
             fatalError("Cannot append arrays of different datatypes in column \(key)")
         }
         wrappedValue += array
     }
 
-    public func getClickHouseArray() -> [ClickHouseDataType] {
+    public func getClickHouseArray() -> ClickHouseDataTypeArray {
         return wrappedValue
     }
 

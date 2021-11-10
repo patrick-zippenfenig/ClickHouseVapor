@@ -115,6 +115,8 @@ extension ClickHouseTypeName {
             return true
         case .string:
             return true
+        case .nullable(let type):
+            return type.supportsLowCardinality
         }
     }
 }
