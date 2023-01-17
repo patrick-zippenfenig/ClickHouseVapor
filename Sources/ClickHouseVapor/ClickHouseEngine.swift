@@ -120,7 +120,7 @@ extension ClickHouseTypeName {
         case .array(let type):
             return false
         case .boolean: 
-            return true
+            return false
         case .date: 
             return false
         case .date32: 

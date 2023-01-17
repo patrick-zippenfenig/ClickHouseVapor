@@ -33,6 +33,10 @@ public class TestModel: ClickHouseModel {
     @Field(key: "arr")
     var arr: [ [Int64] ]
 
+    /// Not implemented on test-server
+    // @Field(key: "bol")
+    // var bol: [ Bool ]
+
     @Field(key: "dat")
     var dat: [ClickHouseDate]
 
