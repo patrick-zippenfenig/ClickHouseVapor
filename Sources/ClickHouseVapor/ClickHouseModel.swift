@@ -9,6 +9,7 @@ import Foundation
 import Vapor
 import ClickHouseNIO
 
+
 public protocol ClickHouseModel: AnyObject {
     static var engine: ClickHouseEngine { get }
     init()

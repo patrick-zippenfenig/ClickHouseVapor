@@ -117,6 +117,22 @@ extension ClickHouseTypeName {
             return true
         case .nullable(let type):
             return type.supportsLowCardinality
-        }
+        case .array(let type):
+            return type.supportsLowCardinality
+        case .boolean: 
+            return true
+        case .date: 
+            return false
+        case .date32: 
+            return false
+        case .dateTime(_): 
+            return false
+        case .dateTime64(_): 
+            return false
+        case .enum16(_): 
+            return false
+        case .enum8(_): 
+            return false
+}
     }
 }
