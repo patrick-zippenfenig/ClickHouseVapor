@@ -48,9 +48,8 @@ public class TestModel: ClickHouseModel {
     @Field(key: "datt")
     var datt: [ ClickHouseDateTime ]
 
-    ///TODO: requires a fix in ClickHouseNio    
-    // @Field(key: "dattz", timeZone: "'GMT'")
-    // var dattz: [ ClickHouseDateTime ]
+    @Field(key: "dattz", timeZone: "'GMT'")
+    var dattz: [ ClickHouseDateTime ]
 
     @Field(key: "datt64", precision: 3)
     var datt64: [ ClickHouseDateTime64 ]
@@ -116,6 +115,7 @@ final class ClickHouseVaporTests: XCTestCase {
         model.datt = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.datt64 = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.datt64z = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
+        model.dattz = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.en8 = [.init(word: "a"), .init(word: "b"), .init(word: "a")]
         model.en16 = [.init(word: "a"), .init(word: "b"), .init(word: "c")]
         model.timestamp = [ 100, 200, 300 ]
@@ -130,7 +130,7 @@ final class ClickHouseVaporTests: XCTestCase {
             .replacingOccurrences(of: "Enum16('c'=600,'b'=1,'a'=12)", with: "Enum16('a'=12,'b'=1,'c'=600)")
             .replacingOccurrences(of: "Enum16('c'=600,'a'=12,'b'=1)", with: "Enum16('a'=12,'b'=1,'c'=600)"),
             """
-            CREATE TABLE IF NOT EXISTS `test`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),arr Array(Int64),dat Date,datt DateTime,datt64 DateTime64(3),datt64z DateTime64(3, 'GMT'),en8 Enum8('a'=0,'b'=1),en16 Enum16('a'=12,'b'=1,'c'=600),temperature Float32)
+            CREATE TABLE IF NOT EXISTS `test`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),arr Array(Int64),dat Date,datt DateTime,dattz DateTime('GMT'),datt64 DateTime64(3),datt64z DateTime64(3, 'GMT'),en8 Enum8('a'=0,'b'=1),en16 Enum16('a'=12,'b'=1,'c'=600),temperature Float32)
             ENGINE = ReplacingMergeTree()
             PRIMARY KEY (timestamp,stationID) PARTITION BY (toYYYYMM(toDateTime(timestamp))) ORDER BY (timestamp,stationID)
             """)
@@ -146,6 +146,8 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model2.dat.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
         XCTAssertEqual(model.datt.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
         XCTAssertEqual(model2.datt.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model.dattz.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model2.dattz.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
         XCTAssertEqual(model.en8.map { $0.word}, ["a", "b", "a"])
         XCTAssertEqual(model2.en8.map { $0.word}, ["a", "b", "a"])
         XCTAssertEqual(model.en16.map { $0.word}, ["a", "b", "c"])
