@@ -7,6 +7,8 @@
 
 import ClickHouseNIO
 
+
+
 /// Define how a colun can be converted into a clickhose datatype
 public protocol ClickHouseColumnConvertible: AnyObject {
     var key: String { get }
@@ -30,7 +32,7 @@ public protocol ClickHouseColumnConvertible: AnyObject {
 public protocol ClickHouseColumnConvertibleTyped: ClickHouseColumnConvertible {
     associatedtype Value: ClickHouseDataType
     var wrappedValue: [Value] { get set }
-    var fixedStringLen: Int? { get }
+    var columnMetadata: ClickHouseColumnMetadata? { get }
 
 }
 
@@ -70,7 +72,7 @@ extension ClickHouseColumnConvertibleTyped {
     }
 
     public func clickHouseTypeName() -> ClickHouseTypeName {
-        return Value.getClickHouseTypeName(fixedLength: fixedStringLen)
+        return Value.getClickHouseTypeName(columnMetadata: columnMetadata)
     }
 }
 
@@ -81,25 +83,122 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
     public let isPrimary: Bool
     public let isOrderBy: Bool
     public let isLowCardinality: Bool
-    public let fixedStringLen: Int?
+    public let columnMetadata: ClickHouseColumnMetadata?
 
     public var projectedValue: Field<Value> {
         self
     }
 
-    public init(
+    
+    fileprivate init(
         key: String,
         isPrimary: Bool = false,
         isOrderBy: Bool = false,
         isLowCardinality: Bool = false,
-        fixedStringLen: Int? = nil
+        columnMetadata: ClickHouseColumnMetadata
     ) {
         self.key = key
         self.isPrimary = isPrimary
         self.isOrderBy = isOrderBy
         self.isLowCardinality = isLowCardinality
-        self.fixedStringLen = fixedStringLen
+        self.columnMetadata = columnMetadata
         self.wrappedValue = []
+    }
+    public init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false
+    ) {
+        self.key = key
+        self.isPrimary = isPrimary
+        self.isOrderBy = isOrderBy
+        self.isLowCardinality = isLowCardinality
+        self.columnMetadata = nil
+        self.wrappedValue = []
+    }
+}
+
+extension Field where Value == String {
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false,
+        fixedStringLen: Int
+    ) {
+        self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .fixedStringLength(fixedStringLen))
+    }
+}
+extension Field where Value == ClickHouseDateTime {
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false,
+        timeZone: String? = nil
+    ) {
+        self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .dateTimeTimeZone(timeZone))
+    }
+    
+}
+extension Field where Value == ClickHouseDateTime64 {
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false,
+        precision: Int,
+        timeZone: String? = nil
+    ) {
+        self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .dateTime64Precision(precision, timeZone))
+    }
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false
+    ) {
+        fatalError("missing precision for DateTime64")
+    }
+}
+extension Field where Value == ClickHouseEnum8 {
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false,
+        mapping: [String: Int8]
+    ) {
+        self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .enum8Map(mapping))
+    }
+
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false
+    ) {
+        fatalError("missing enum-mapping for enum8")
+    }
+}
+extension Field where Value == ClickHouseEnum16 {
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false,
+        mapping: [String: Int16]
+    ) {
+        self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .enum16Map(mapping))
+    }
+    convenience init(
+        key: String,
+        isPrimary: Bool = false,
+        isOrderBy: Bool = false,
+        isLowCardinality: Bool = false
+    ) {
+        fatalError("missing enum-mapping for enum16")
     }
 }
 

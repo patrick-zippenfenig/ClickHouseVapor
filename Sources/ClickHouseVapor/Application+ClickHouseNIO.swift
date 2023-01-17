@@ -10,6 +10,13 @@ import ClickHouseNIO
 
 @_exported import struct NIO.TimeAmount
 
+@_exported import struct ClickHouseNIO.ClickHouseDate
+@_exported import struct ClickHouseNIO.ClickHouseDate32
+@_exported import struct ClickHouseNIO.ClickHouseDateTime
+@_exported import struct ClickHouseNIO.ClickHouseDateTime64
+@_exported import struct ClickHouseNIO.ClickHouseEnum8
+@_exported import struct ClickHouseNIO.ClickHouseEnum16
+
 /// Vapor `Application.ClickHouse` and `Request.ClickHouse` implement this procotol to be used later for queries
 public protocol ClickHouseConnectionProtocol {
     var eventLoop: EventLoop { get }
