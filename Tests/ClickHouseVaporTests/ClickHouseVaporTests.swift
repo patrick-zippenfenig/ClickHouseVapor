@@ -30,6 +30,9 @@ public class TestModel: ClickHouseModel {
     @Field(key: "fixed", isLowCardinality: true, fixedStringLen: 10)
     var fixed: [ String ]
 
+    @Field(key: "arr")
+    var arr: [ [Int64] ]
+
     @Field(key: "dat")
     var dat: [ClickHouseDate]
 
@@ -104,6 +107,7 @@ final class ClickHouseVaporTests: XCTestCase {
 
         model.id = [ "x010", "ax51", "cd22" ]
         model.fixed = [ "", "123456", "12345678901234" ]
+        model.arr =  [[1], [], [76, 56, 2]]
         model.dat = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.datt = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.datt64 = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
@@ -122,7 +126,7 @@ final class ClickHouseVaporTests: XCTestCase {
             .replacingOccurrences(of: "Enum16('c'=600,'b'=1,'a'=12)", with: "Enum16('a'=12,'b'=1,'c'=600)")
             .replacingOccurrences(of: "Enum16('c'=600,'a'=12,'b'=1)", with: "Enum16('a'=12,'b'=1,'c'=600)"),
             """
-            CREATE TABLE IF NOT EXISTS `test`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),dat Date,datt DateTime,datt64 DateTime64(3),datt64z DateTime64(3, 'GMT'),en8 Enum8('a'=0,'b'=1),en16 Enum16('a'=12,'b'=1,'c'=600),temperature Float32)
+            CREATE TABLE IF NOT EXISTS `test`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),arr Array(Int64),dat Date,datt DateTime,datt64 DateTime64(3),datt64z DateTime64(3, 'GMT'),en8 Enum8('a'=0,'b'=1),en16 Enum16('a'=12,'b'=1,'c'=600),temperature Float32)
             ENGINE = ReplacingMergeTree()
             PRIMARY KEY (timestamp,stationID) PARTITION BY (toYYYYMM(toDateTime(timestamp))) ORDER BY (timestamp,stationID)
             """)
@@ -142,6 +146,8 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model2.en8.map { $0.word}, ["a", "b", "a"])
         XCTAssertEqual(model.en16.map { $0.word}, ["a", "b", "c"])
         XCTAssertEqual(model2.en16.map { $0.word}, ["a", "b", "c"])
+        XCTAssertEqual(model.arr, [[1], [], [76, 56, 2]])
+        XCTAssertEqual(model2.arr, [[1], [], [76, 56, 2]])
 
         let filtered = try! TestModel.select(
             on: app.clickHouse,
