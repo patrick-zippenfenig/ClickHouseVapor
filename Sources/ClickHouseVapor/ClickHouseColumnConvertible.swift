@@ -89,7 +89,7 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
         self
     }
 
-    
+
     fileprivate init(
         key: String,
         isPrimary: Bool = false,
@@ -104,6 +104,7 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
         self.columnMetadata = columnMetadata
         self.wrappedValue = []
     }
+
     public init(
         key: String,
         isPrimary: Bool = false,
@@ -119,7 +120,7 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
     }
 }
 
-extension Field where Value == String {
+public extension Field where Value == String {
     convenience init(
         key: String,
         isPrimary: Bool = false,
@@ -130,7 +131,8 @@ extension Field where Value == String {
         self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .fixedStringLength(fixedStringLen))
     }
 }
-extension Field where Value == ClickHouseDateTime {
+
+public extension Field where Value == ClickHouseDateTime {
     convenience init(
         key: String,
         isPrimary: Bool = false,
@@ -140,9 +142,9 @@ extension Field where Value == ClickHouseDateTime {
     ) {
         self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .dateTimeTimeZone(timeZone))
     }
-    
+
 }
-extension Field where Value == ClickHouseDateTime64 {
+public extension Field where Value == ClickHouseDateTime64 {
     convenience init(
         key: String,
         isPrimary: Bool = false,
@@ -153,6 +155,7 @@ extension Field where Value == ClickHouseDateTime64 {
     ) {
         self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .dateTime64Precision(precision, timeZone))
     }
+
     convenience init(
         key: String,
         isPrimary: Bool = false,
@@ -162,7 +165,7 @@ extension Field where Value == ClickHouseDateTime64 {
         fatalError("missing precision for DateTime64")
     }
 }
-extension Field where Value == ClickHouseEnum8 {
+public extension Field where Value == ClickHouseEnum8 {
     convenience init(
         key: String,
         isPrimary: Bool = false,
@@ -182,7 +185,7 @@ extension Field where Value == ClickHouseEnum8 {
         fatalError("missing enum-mapping for enum8")
     }
 }
-extension Field where Value == ClickHouseEnum16 {
+public extension Field where Value == ClickHouseEnum16 {
     convenience init(
         key: String,
         isPrimary: Bool = false,
@@ -192,6 +195,7 @@ extension Field where Value == ClickHouseEnum16 {
     ) {
         self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .enum16Map(mapping))
     }
+
     convenience init(
         key: String,
         isPrimary: Bool = false,
