@@ -142,7 +142,6 @@ public extension Field where Value == ClickHouseDateTime {
     ) {
         self.init(key: key, isPrimary: isPrimary, isOrderBy: isOrderBy, isLowCardinality: isLowCardinality, columnMetadata: .dateTimeTimeZone(timeZone))
     }
-
 }
 public extension Field where Value == ClickHouseDateTime64 {
     convenience init(
