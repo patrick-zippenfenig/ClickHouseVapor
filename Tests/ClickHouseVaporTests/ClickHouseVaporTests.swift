@@ -54,7 +54,7 @@ public class TestModel: ClickHouseModel {
     @Field(key: "datt64", precision: 3)
     var datt64: [ ClickHouseDateTime64 ]
     
-    @Field(key: "datt64z", precision: 3,timeZone: "'GMT'")
+    @Field(key: "datt64z", precision: 3, timeZone: "'GMT'")
     var datt64z: [ ClickHouseDateTime64 ]
     
     @Field(key: "en8", mapping: ["a": 0, "b": 1])
