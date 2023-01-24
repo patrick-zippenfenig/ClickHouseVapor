@@ -51,7 +51,7 @@ extension ClickHouseModel {
         var allMirrors: [Mirror] = [Mirror(reflecting: self)]
         // collect all the superclass mirrors as well
         // then iterate over the children in reversed order
-        while let superMirror = allMirrors.last!.superclassMirror {
+        while let superMirror = allMirrors.last?.superclassMirror {
             allMirrors.append(superMirror)
         }
         return allMirrors.reversed().flatMap { m in

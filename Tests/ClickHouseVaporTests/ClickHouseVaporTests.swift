@@ -70,9 +70,23 @@ public class TestModel: ClickHouseModel {
 
     }
 
-    public static var engine: ClickHouseEngine {
+    public class var engine: ClickHouseEngine {
         return ClickHouseEngineReplacingMergeTree(
             table: "test",
+            database: nil,
+            cluster: nil,
+            partitionBy: "toYYYYMM(toDateTime(timestamp))"
+        )
+    }
+}
+
+public class InheritedTestModel: TestModel {
+    @Field(key: "temperature2")
+    var temperature2: [Float]
+
+    override public class var engine: ClickHouseEngine {
+        return ClickHouseEngineReplacingMergeTree(
+            table: "testInherited",
             database: nil,
             cluster: nil,
             partitionBy: "toYYYYMM(toDateTime(timestamp))"
@@ -176,6 +190,28 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertTrue(model3.temperature.isEmpty, "temperature array was not selected, is supposed to be empty")
         XCTAssertEqual(model3.id, model2.id)
         XCTAssertEqual(model3.timestamp, model2.timestamp)
+    }
+
+    public func testInheritedModelCreateTable() throws {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try! app.configureClickHouseDatabases()
+        app.logger.logLevel = .trace
+
+        let model = InheritedTestModel()
+        let createQuery = InheritedTestModel.engine.createTableQuery(columns: model.properties)
+        XCTAssertEqual(createQuery
+            .replacingOccurrences(of: "Enum8('b'=1,'a'=0)", with: "Enum8('a'=0,'b'=1)")
+            .replacingOccurrences(of: "Enum16('b'=1,'a'=12,'c'=600)", with: "Enum16('a'=12,'b'=1,'c'=600)")
+            .replacingOccurrences(of: "Enum16('b'=1,'c'=600,'a'=12)", with: "Enum16('a'=12,'b'=1,'c'=600)")
+            .replacingOccurrences(of: "Enum16('a'=12,'c'=600,'b'=1)", with: "Enum16('a'=12,'b'=1,'c'=600)")
+            .replacingOccurrences(of: "Enum16('c'=600,'b'=1,'a'=12)", with: "Enum16('a'=12,'b'=1,'c'=600)")
+            .replacingOccurrences(of: "Enum16('c'=600,'a'=12,'b'=1)", with: "Enum16('a'=12,'b'=1,'c'=600)"),
+            """
+            CREATE TABLE IF NOT EXISTS `testInherited`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),arr Array(Int64),dat Date,datt DateTime,dattz DateTime('GMT'),datt64 DateTime64(3),datt64z DateTime64(3, 'GMT'),en8 Enum8('a'=0,'b'=1),en16 Enum16('a'=12,'b'=1,'c'=600),temperature Float32,temperature2 Float32)
+            ENGINE = ReplacingMergeTree()
+            PRIMARY KEY (timestamp,stationID) PARTITION BY (toYYYYMM(toDateTime(timestamp))) ORDER BY (timestamp,stationID)
+            """)
     }
 
     /// insert should fail if some columns are not set, but others are
