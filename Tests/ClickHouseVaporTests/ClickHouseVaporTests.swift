@@ -80,6 +80,30 @@ public class TestModel: ClickHouseModel {
     }
 }
 
+open class TestParentClass {
+    @Field(key: "timestamp", isPrimary: true, isOrderBy: true)
+    var timestamp: [Int64]
+
+    @Field(key: "stationID", isPrimary: true, isOrderBy: true, isLowCardinality: true)
+    var id: [String]
+}
+
+public final class InheritedTestModel: TestParentClass, ClickHouseModel {
+    @Field(key: "temperature")
+    var temperature: [Float]
+
+    override public init() {}
+
+    public static var engine: ClickHouseEngine {
+        return ClickHouseEngineReplacingMergeTree(
+            table: "testInherited",
+            database: nil,
+            cluster: nil,
+            partitionBy: "toYYYYMM(toDateTime(timestamp))"
+        )
+    }
+}
+
 final class ClickHouseVaporTests: XCTestCase {
 
     static var allTests = [
@@ -176,6 +200,41 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertTrue(model3.temperature.isEmpty, "temperature array was not selected, is supposed to be empty")
         XCTAssertEqual(model3.id, model2.id)
         XCTAssertEqual(model3.timestamp, model2.timestamp)
+    }
+
+    public func testInheritedModel() throws {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try! app.configureClickHouseDatabases()
+        app.logger.logLevel = .trace
+
+        let model = InheritedTestModel()
+        let createQuery = InheritedTestModel.engine.createTableQuery(columns: model.properties)
+        XCTAssertEqual(createQuery,
+            """
+            CREATE TABLE IF NOT EXISTS `testInherited`  (timestamp Int64,stationID LowCardinality(String),temperature Float32)
+            ENGINE = ReplacingMergeTree()
+            PRIMARY KEY (timestamp,stationID) PARTITION BY (toYYYYMM(toDateTime(timestamp))) ORDER BY (timestamp,stationID)
+            """
+        )
+
+        // drop table to ensure unit test
+        try! InheritedTestModel.deleteTable(on: app.clickHouse).wait()
+        // create table
+        try! InheritedTestModel.createTable(on: app.clickHouse).wait()
+        
+        // fill model with data and insert it
+        model.id = [ "x010", "ax51", "cd22" ]
+        model.timestamp = [ 100, 200, 300 ]
+        model.temperature = [ 11.1, 10.4, 8.9 ]
+        try! model.insert(on: app.clickHouse).wait()
+
+        // select the data again
+        let model2 = try! InheritedTestModel.select(on: app.clickHouse).wait()
+
+        XCTAssertEqual(model2.id, model.id)        
+        XCTAssertEqual(model2.timestamp, model.timestamp)        
+        XCTAssertEqual(model2.temperature, model.temperature)        
     }
 
     /// insert should fail if some columns are not set, but others are

@@ -48,8 +48,16 @@ extension ClickHouseModel {
     /// Get access to the internal Property wrappers using Reflection.
     /// This way we can apply data from select queries to the correct row.
     internal var properties: [ClickHouseColumnConvertible] {
-        return Mirror(reflecting: self).children.compactMap {
-            $0.value as? ClickHouseColumnConvertible
+        var allMirrors: [Mirror] = [Mirror(reflecting: self)]
+        // collect all the superclass mirrors as well
+        // then iterate over the children in reversed order
+        while let superMirror = allMirrors.last?.superclassMirror {
+            allMirrors.append(superMirror)
+        }
+        return allMirrors.reversed().flatMap { m in
+            m.children.compactMap { 
+                $0.value as? ClickHouseColumnConvertible
+            }
         }
     }
 
