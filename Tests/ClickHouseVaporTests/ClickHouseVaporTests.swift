@@ -70,7 +70,7 @@ public class TestModel: ClickHouseModel {
 
     }
 
-    public class var engine: ClickHouseEngine {
+    public static var engine: ClickHouseEngine {
         return ClickHouseEngineReplacingMergeTree(
             table: "test",
             database: nil,
@@ -80,11 +80,21 @@ public class TestModel: ClickHouseModel {
     }
 }
 
-public class InheritedTestModel: TestModel {
-    @Field(key: "temperature2")
-    var temperature2: [Float]
+open class TestParentClass {
+    @Field(key: "timestamp", isPrimary: true, isOrderBy: true)
+    var timestamp: [Int64]
 
-    override public class var engine: ClickHouseEngine {
+    @Field(key: "stationID", isPrimary: true, isOrderBy: true, isLowCardinality: true)
+    var id: [String]
+}
+
+public final class InheritedTestModel: TestParentClass, ClickHouseModel {
+    @Field(key: "temperature")
+    var temperature: [Float]
+
+    override public init() {}
+
+    public static var engine: ClickHouseEngine {
         return ClickHouseEngineReplacingMergeTree(
             table: "testInherited",
             database: nil,
@@ -192,7 +202,7 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model3.timestamp, model2.timestamp)
     }
 
-    public func testInheritedModelCreateTable() throws {
+    public func testInheritedModel() throws {
         let app = Application(.testing)
         defer { app.shutdown() }
         try! app.configureClickHouseDatabases()
@@ -200,18 +210,31 @@ final class ClickHouseVaporTests: XCTestCase {
 
         let model = InheritedTestModel()
         let createQuery = InheritedTestModel.engine.createTableQuery(columns: model.properties)
-        XCTAssertEqual(createQuery
-            .replacingOccurrences(of: "Enum8('b'=1,'a'=0)", with: "Enum8('a'=0,'b'=1)")
-            .replacingOccurrences(of: "Enum16('b'=1,'a'=12,'c'=600)", with: "Enum16('a'=12,'b'=1,'c'=600)")
-            .replacingOccurrences(of: "Enum16('b'=1,'c'=600,'a'=12)", with: "Enum16('a'=12,'b'=1,'c'=600)")
-            .replacingOccurrences(of: "Enum16('a'=12,'c'=600,'b'=1)", with: "Enum16('a'=12,'b'=1,'c'=600)")
-            .replacingOccurrences(of: "Enum16('c'=600,'b'=1,'a'=12)", with: "Enum16('a'=12,'b'=1,'c'=600)")
-            .replacingOccurrences(of: "Enum16('c'=600,'a'=12,'b'=1)", with: "Enum16('a'=12,'b'=1,'c'=600)"),
+        XCTAssertEqual(createQuery,
             """
-            CREATE TABLE IF NOT EXISTS `testInherited`  (timestamp Int64,stationID LowCardinality(String),fixed LowCardinality(FixedString(10)),arr Array(Int64),dat Date,datt DateTime,dattz DateTime('GMT'),datt64 DateTime64(3),datt64z DateTime64(3, 'GMT'),en8 Enum8('a'=0,'b'=1),en16 Enum16('a'=12,'b'=1,'c'=600),temperature Float32,temperature2 Float32)
+            CREATE TABLE IF NOT EXISTS `testInherited`  (timestamp Int64,stationID LowCardinality(String),temperature Float32)
             ENGINE = ReplacingMergeTree()
             PRIMARY KEY (timestamp,stationID) PARTITION BY (toYYYYMM(toDateTime(timestamp))) ORDER BY (timestamp,stationID)
-            """)
+            """
+        )
+
+        // drop table to ensure unit test
+        try! InheritedTestModel.deleteTable(on: app.clickHouse).wait()
+        // create table
+        try! InheritedTestModel.createTable(on: app.clickHouse).wait()
+        
+        // fill model with data and insert it
+        model.id = [ "x010", "ax51", "cd22" ]
+        model.timestamp = [ 100, 200, 300 ]
+        model.temperature = [ 11.1, 10.4, 8.9 ]
+        try! model.insert(on: app.clickHouse).wait()
+
+        // select the data again
+        let model2 = try! InheritedTestModel.select(on: app.clickHouse).wait()
+
+        XCTAssertEqual(model2.id, model.id)        
+        XCTAssertEqual(model2.timestamp, model.timestamp)        
+        XCTAssertEqual(model2.temperature, model.temperature)        
     }
 
     /// insert should fail if some columns are not set, but others are
