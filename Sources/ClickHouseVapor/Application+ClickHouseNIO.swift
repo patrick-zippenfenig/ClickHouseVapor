@@ -87,12 +87,13 @@ extension Application {
         }
 
         internal var pool: EventLoopGroupConnectionPool<ClickHouseConfiguration> {
+            let lock = self.application.locks.lock(for: PoolKey.self)
+            lock.lock()
+            defer { lock.unlock() }
+
             if let existing = self.application.storage[PoolKey.self] {
                 return existing
             } else {
-                let lock = self.application.locks.lock(for: PoolKey.self)
-                lock.lock()
-                defer { lock.unlock() }
                 guard let configuration = self.configuration else {
                     fatalError("ClickHouse not configured. Use app.clickHouse.configuration = ...")
                 }
