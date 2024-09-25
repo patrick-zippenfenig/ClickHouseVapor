@@ -5,10 +5,9 @@
 //  Created by Patrick Zippenfenig on 2020-11-10.
 //
 
+import ClickHouseNIO
 import Foundation
 import Vapor
-import ClickHouseNIO
-
 
 public protocol ClickHouseModel: AnyObject {
     static var engine: ClickHouseEngine { get }
@@ -19,7 +18,7 @@ extension ClickHouseModel {
     /// Get the number of rows.
     /// In case only some rows are populated (e.g. only certain ), the first column with more than 0 rows is considered.
     public var count: Int {
-        return properties.first(where: {$0.count > 0})?.count ?? 0
+        return properties.first(where: { $0.count > 0 })?.count ?? 0
     }
 
     /// Only include column rows where the isIncluded array is true.
@@ -55,7 +54,7 @@ extension ClickHouseModel {
             allMirrors.append(superMirror)
         }
         return allMirrors.reversed().flatMap { m in
-            m.children.compactMap { 
+            m.children.compactMap {
                 $0.value as? ClickHouseColumnConvertible
             }
         }
@@ -66,7 +65,7 @@ extension ClickHouseModel {
         on connection: ClickHouseConnectionProtocol,
         engine: ClickHouseEngine? = nil
     ) -> EventLoopFuture<Void> {
-        let fields = Self.init().properties
+        let fields = Self().properties
         let engine = engine ?? Self.engine
         let query = engine.createTableQuery(columns: fields)
         connection.logger.debug("\(query)")
@@ -128,11 +127,11 @@ extension ClickHouseModel {
         sql: String
     ) -> EventLoopFuture<Self> {
         connection.logger.debug("\(sql)")
-        let this = Self.init()
+        let this = Self()
         let properties = this.properties
         return connection.query(sql: sql).flatMapThrowing { res -> Self in
             try res.columns.forEach { column in
-                guard let prop = properties.first(where: {$0.key == column.name}) else {
+                guard let prop = properties.first(where: { $0.key == column.name }) else {
                     return
                 }
                 try prop.setClickHouseArray(column.values)
@@ -153,9 +152,8 @@ extension ClickHouseModel {
         offset: Int? = nil,
         engine: ClickHouseEngine? = nil
     ) -> EventLoopFuture<Self> {
-
         let engine = engine ?? Self.engine
-        let fields = fields ?? Self.init().properties.map { "`\($0.key)`" }
+        let fields = fields ?? Self().properties.map { "`\($0.key)`" }
 
         var sql = "SELECT "
         sql += fields.joined(separator: ",")
