@@ -5,8 +5,8 @@
 //  Created by Patrick Zippenfenig on 2020-11-10.
 //
 
-import Vapor
 import ClickHouseNIO
+import Vapor
 
 @_exported import struct NIO.TimeAmount
 
@@ -34,13 +34,14 @@ public struct ClickHousePoolConfiguration {
     public let maxConnectionsPerEventLoop: Int
     public let requestTimeout: TimeAmount
 
-    public init(hostname: String = "localhost",
-                port: Int = ClickHouseConnection.defaultPort,
-                user: String? = nil,
-                password: String? = nil,
-                database: String? = nil,
-                maxConnectionsPerEventLoop: Int = 1,
-                requestTimeout: TimeAmount = .seconds(10)
+    public init(
+        hostname: String = "localhost",
+        port: Int = ClickHouseConnection.defaultPort,
+        user: String? = nil,
+        password: String? = nil,
+        database: String? = nil,
+        maxConnectionsPerEventLoop: Int = 1,
+        requestTimeout: TimeAmount = .seconds(10)
     ) throws {
         self.configuration = try ClickHouseConfiguration(
             hostname: hostname,

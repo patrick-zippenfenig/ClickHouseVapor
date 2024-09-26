@@ -1,7 +1,8 @@
-import XCTest
-@testable import ClickHouseVapor
 import Foundation
 import Vapor
+import XCTest
+
+@testable import ClickHouseVapor
 
 extension Application {
     func configureClickHouseDatabases() throws {
@@ -40,10 +41,9 @@ public class TestModel: ClickHouseModel {
     @Field(key: "dat")
     var dat: [ClickHouseDate]
 
-
     /// Not implemented on test-server
     // @Field(key: "dat32")
-    // var dat32: [ClickHouseDate32] 
+    // var dat32: [ClickHouseDate32]
 
     @Field(key: "datt")
     var datt: [ ClickHouseDateTime ]
@@ -53,22 +53,20 @@ public class TestModel: ClickHouseModel {
 
     @Field(key: "datt64", precision: 3)
     var datt64: [ ClickHouseDateTime64 ]
-    
+
     @Field(key: "datt64z", precision: 3, timeZone: "'GMT'")
     var datt64z: [ ClickHouseDateTime64 ]
-    
+
     @Field(key: "en8", mapping: ["a": 0, "b": 1])
     var en8: [ ClickHouseEnum8 ]
-    
+
     @Field(key: "en16", mapping: ["a": 12, "b": 1, "c": 600])
     var en16: [ ClickHouseEnum16 ]
 
     @Field(key: "temperature")
     var temperature: [Float]
 
-    required public init() {
-
-    }
+    public required init() {}
 
     public static var engine: ClickHouseEngine {
         return ClickHouseEngineReplacingMergeTree(
@@ -105,7 +103,6 @@ public final class InheritedTestModel: TestParentClass, ClickHouseModel {
 }
 
 final class ClickHouseVaporTests: XCTestCase {
-
     static var allTests = [
         ("testPing", testPing),
         ("testModel", testModel),
@@ -134,7 +131,7 @@ final class ClickHouseVaporTests: XCTestCase {
 
         model.id = [ "x010", "ax51", "cd22" ]
         model.fixed = [ "", "123456", "12345678901234" ]
-        model.arr =  [[1], [], [76, 56, 2]]
+        model.arr = [[1], [], [76, 56, 2]]
         model.dat = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.datt = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
         model.datt64 = [.clickhouseDefault, .clickhouseDefault, .clickhouseDefault]
@@ -144,7 +141,7 @@ final class ClickHouseVaporTests: XCTestCase {
         model.en16 = [.init(word: "a"), .init(word: "b"), .init(word: "c")]
         model.timestamp = [ 100, 200, 300 ]
         model.temperature = [ 11.1, 10.4, 8.9 ]
-        
+
         let createQuery = TestModel.engine.createTableQuery(columns: model.properties)
         XCTAssertEqual(createQuery
             .replacingOccurrences(of: "Enum8('b'=1,'a'=0)", with: "Enum8('a'=0,'b'=1)")
@@ -166,16 +163,16 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(model.id, model2.id)
         XCTAssertEqual(["", "123456", "1234567890"], model2.fixed)
         XCTAssertEqual(model.timestamp, model2.timestamp)
-        XCTAssertEqual(model.dat.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
-        XCTAssertEqual(model2.dat.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
-        XCTAssertEqual(model.datt.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
-        XCTAssertEqual(model2.datt.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
-        XCTAssertEqual(model.dattz.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
-        XCTAssertEqual(model2.dattz.map { $0.date}, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
-        XCTAssertEqual(model.en8.map { $0.word}, ["a", "b", "a"])
-        XCTAssertEqual(model2.en8.map { $0.word}, ["a", "b", "a"])
-        XCTAssertEqual(model.en16.map { $0.word}, ["a", "b", "c"])
-        XCTAssertEqual(model2.en16.map { $0.word}, ["a", "b", "c"])
+        XCTAssertEqual(model.dat.map { $0.date }, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model2.dat.map { $0.date }, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model.datt.map { $0.date }, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model2.datt.map { $0.date }, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model.dattz.map { $0.date }, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model2.dattz.map { $0.date }, [Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0), Date(timeIntervalSince1970: 0.0)])
+        XCTAssertEqual(model.en8.map { $0.word }, ["a", "b", "a"])
+        XCTAssertEqual(model2.en8.map { $0.word }, ["a", "b", "a"])
+        XCTAssertEqual(model.en16.map { $0.word }, ["a", "b", "c"])
+        XCTAssertEqual(model2.en16.map { $0.word }, ["a", "b", "c"])
         XCTAssertEqual(model.arr, [[1], [], [76, 56, 2]])
         XCTAssertEqual(model2.arr, [[1], [], [76, 56, 2]])
 
@@ -192,7 +189,7 @@ final class ClickHouseVaporTests: XCTestCase {
         XCTAssertEqual(filtered.id, ["ax51", "x010"])
         XCTAssertEqual(filtered.timestamp, [200, 100])
 
-        /// Raw select query, that gets applied to
+        // Raw select query, that gets applied to
         let model3 = try! TestModel.select(
             on: app.clickHouse,
             sql: "SELECT timestamp, stationID FROM default.test"
@@ -210,7 +207,8 @@ final class ClickHouseVaporTests: XCTestCase {
 
         let model = InheritedTestModel()
         let createQuery = InheritedTestModel.engine.createTableQuery(columns: model.properties)
-        XCTAssertEqual(createQuery,
+        XCTAssertEqual(
+            createQuery,
             """
             CREATE TABLE IF NOT EXISTS `testInherited`  (timestamp Int64,stationID LowCardinality(String),temperature Float32)
             ENGINE = ReplacingMergeTree()
@@ -222,7 +220,7 @@ final class ClickHouseVaporTests: XCTestCase {
         try! InheritedTestModel.deleteTable(on: app.clickHouse).wait()
         // create table
         try! InheritedTestModel.createTable(on: app.clickHouse).wait()
-        
+
         // fill model with data and insert it
         model.id = [ "x010", "ax51", "cd22" ]
         model.timestamp = [ 100, 200, 300 ]
@@ -232,9 +230,9 @@ final class ClickHouseVaporTests: XCTestCase {
         // select the data again
         let model2 = try! InheritedTestModel.select(on: app.clickHouse).wait()
 
-        XCTAssertEqual(model2.id, model.id)        
-        XCTAssertEqual(model2.timestamp, model.timestamp)        
-        XCTAssertEqual(model2.temperature, model.temperature)        
+        XCTAssertEqual(model2.id, model.id)
+        XCTAssertEqual(model2.timestamp, model.timestamp)
+        XCTAssertEqual(model2.temperature, model.temperature)
     }
 
     /// insert should fail if some columns are not set, but others are

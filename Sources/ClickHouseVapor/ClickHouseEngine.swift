@@ -8,9 +8,9 @@
 import Foundation
 import enum ClickHouseNIO.ClickHouseTypeName
 
-/// Abstract a clickhouse storage engine. For example the `ReplacingMergeTree` requires special CREATE syntax.
+/// Abstract a clickHouse storage engine. For example the `ReplacingMergeTree` requires special CREATE syntax.
 /// This could also be used to
-public protocol ClickHouseEngine {
+public protocol ClickHouseEngine: Sendable {
     /// Generate a SQL query to create the table using the defined model columns
     func createTableQuery(columns: [ClickHouseColumnConvertible]) -> String
 
@@ -26,23 +26,23 @@ public protocol ClickHouseEngine {
 
 extension ClickHouseEngine {
     public var isUsingCluster: Bool {
-        cluster != nil
+        self.cluster != nil
     }
 
-    /// Returns the tablename and database name encoded with a dot
+    /// Returns the table name and database name encoded with a dot
     public var tableWithDatabase: String {
-        if let database = database {
-            return "`\(database)`.`\(table)`"
+        if let database = self.database {
+            return "`\(database)`.`\(self.table)`"
         }
-        return "`\(table)`"
+        return "`\(self.table)`"
     }
 }
 
 public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
-    public var table: String
-    public var database: String?
-    public var cluster: String?
-    public var partitionBy: String?
+    public let table: String
+    public let database: String?
+    public let cluster: String?
+    public let partitionBy: String?
 
     public init(table: String, database: String?, cluster: String?, partitionBy: String?) {
         self.table = table
@@ -77,7 +77,7 @@ public struct ClickHouseEngineReplacingMergeTree: ClickHouseEngine {
         PRIMARY KEY (\(ids.joined(separator: ",")))
         """
         if let partitionBy = partitionBy {
-          query += " PARTITION BY (\(partitionBy))"
+            query += " PARTITION BY (\(partitionBy))"
         }
         query += " ORDER BY (\(order.joined(separator: ",")))"
         return query
@@ -89,50 +89,16 @@ extension ClickHouseTypeName {
         // basically all numerical data types except for Decimal support LowCardinality
         // https://clickhouse.tech/docs/en/sql-reference/data-types/lowcardinality/
         switch self {
-        case .float:
-            return true
-        case .float64:
-            return true
-        case .int8:
-            return true
-        case .int16:
-            return true
-        case .int32:
-            return true
-        case .int64:
-            return true
-        case .uint8:
-            return true
-        case .uint16:
-            return true
-        case .uint32:
-            return true
-        case .uint64:
+        case .float, .float64, .int8, .int16, .int32, .int64, .uint8, .uint16, .uint32, .uint64:
             return true
         case .uuid:
             return false
-        case .fixedString(_):
-            return true
-        case .string:
+        case .fixedString, .string:
             return true
         case .nullable(let type):
             return type.supportsLowCardinality
-        case .array:
+        case .array, .boolean, .date, .date32, .dateTime, .dateTime64, .enum16, .enum8:
             return false
-        case .boolean: 
-            return false
-        case .date: 
-            return false
-        case .date32: 
-            return false
-        case .dateTime(_): 
-            return false
-        case .dateTime64(_): 
-            return false
-        case .enum16(_): 
-            return false
-        case .enum8(_): 
-            return false
-}
+        }
     }
 }

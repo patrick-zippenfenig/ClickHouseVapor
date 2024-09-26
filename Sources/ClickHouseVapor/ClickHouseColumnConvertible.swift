@@ -7,8 +7,6 @@
 
 import ClickHouseNIO
 
-
-
 /// Define how a colun can be converted into a clickhose datatype
 public protocol ClickHouseColumnConvertible: AnyObject {
     var key: String { get }
@@ -33,7 +31,6 @@ public protocol ClickHouseColumnConvertibleTyped: ClickHouseColumnConvertible {
     associatedtype Value: ClickHouseDataType
     var wrappedValue: [Value] { get set }
     var columnMetadata: ClickHouseColumnMetadata? { get }
-
 }
 
 extension ClickHouseColumnConvertibleTyped {
@@ -88,7 +85,6 @@ public final class Field<Value: ClickHouseDataType>: ClickHouseColumnConvertible
     public var projectedValue: Field<Value> {
         self
     }
-
 
     fileprivate init(
         key: String,
@@ -209,7 +205,7 @@ extension Array {
     /// Only include column rows where the isIncluded array is true
     func filtered(_ isIncluded: [Bool]) -> Self {
         precondition(count == isIncluded.count)
-        var arr = Self.init()
+        var arr = Self()
         let count = isIncluded.reduce(0, { $0 + ($1 ? 1 : 0) })
         arr.reserveCapacity(count)
         for (i, include) in isIncluded.enumerated() where include {
