@@ -89,11 +89,10 @@ jobs:
         key: ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
         restore-keys: |
           ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-
-    - name: Install netcdf
+    - name: Install clickhouse
       run: |
-        apt-key adv --keyserver keyserver.ubuntu.com --recv E0C56BD4; echo "deb http://repo.yandex.ru/clickhouse/deb/stable/ main/" | tee /etc/apt/sources.list.d/clickhouse.list
-        apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -qq -y clickhouse-server
-        service clickhouse-server start
+        curl https://clickhouse.com/ | sh
+        ./clickhouse server
     - name: Resolve dependencies
       if: steps.cache-resolved-dependencies.outputs.cache-hit != 'true'
       run: ${{ env.swift_package_resolve }}
