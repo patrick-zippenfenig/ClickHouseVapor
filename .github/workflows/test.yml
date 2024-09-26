@@ -9,8 +9,9 @@ on:
 env:
   swift_package_resolve: swift package resolve
   swift_build: swift build --build-tests
-  swift_test: CLICKHOUSE_SERVER="127.0.0.1" CLICKHOUSE_USER="default" CLICKHOUSE_PASSWORD="" swift test
+  swift_test: CLICKHOUSE_USER="default" CLICKHOUSE_PASSWORD="" swift test
   cache_version: 1
+  CLICKHOUSE_SERVER: clickhouse
 jobs:
   macOS:
     strategy:
@@ -26,6 +27,9 @@ jobs:
             macos: macOS-14
     runs-on: ${{ matrix.macos }}
     name: macOS
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server
     steps:
     - uses: actions/checkout@master
     - name: Select Xcode version
@@ -48,8 +52,6 @@ jobs:
     - name: Resolve dependencies
       if: steps.cache-resolved-dependencies.outputs.cache-hit != 'true'
       run: ${{ env.swift_package_resolve }}
-    - name: Install clickhouse
-      run: curl https://clickhouse.com/ | sh && ./clickhouse server
     - name: Build
       run: ${{ env.swift_build }}
     - name: Test
@@ -72,6 +74,9 @@ jobs:
     runs-on: ubuntu-20.04
     container: ${{ matrix.container }}
     name: Linux
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server
     steps:
     - name: Get Swift Version
       id: get-swift-version
@@ -89,13 +94,6 @@ jobs:
         key: ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
         restore-keys: |
           ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-
-    - name: Install clickhouse
-      run: |
-        apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -qq -y apt-transport-https ca-certificates curl gnupg
-        curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key' | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] https://packages.clickhouse.com/deb stable main" | tee /etc/apt/sources.list.d/clickhouse.list
-        apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -qq -y clickhouse-server
-        service clickhouse-server start
     - name: Resolve dependencies
       if: steps.cache-resolved-dependencies.outputs.cache-hit != 'true'
       run: ${{ env.swift_package_resolve }}
