@@ -97,7 +97,7 @@ extension ClickHouseTypeName {
             return true
         case .nullable(let type):
             return type.supportsLowCardinality
-        case .array, .boolean, .date, .date32, .dateTime, .dateTime64, .enum16, .enum8:
+        case .array, .map, .boolean, .date, .date32, .dateTime, .dateTime64, .enum16, .enum8:
             return false
         }
     }
