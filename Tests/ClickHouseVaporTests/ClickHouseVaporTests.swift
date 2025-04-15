@@ -6,7 +6,7 @@ import XCTest
 
 extension Application {
     func configureClickHouseDatabases() throws {
-        let ip = ProcessInfo.processInfo.environment["CLICKHOUSE_SERVER"] ?? "172.25.101.30"
+        let ip = ProcessInfo.processInfo.environment["CLICKHOUSE_SERVER"] ?? "127.0.0.1"
         let user = ProcessInfo.processInfo.environment["CLICKHOUSE_USER"] ?? "default"
         let password = ProcessInfo.processInfo.environment["CLICKHOUSE_PASSWORD"] ?? "admin"
         clickHouse.configuration = try ClickHousePoolConfiguration(
