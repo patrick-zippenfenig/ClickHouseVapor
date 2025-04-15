@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
-        .package(url: "https://github.com/patrick-zippenfenig/ClickHouseNIO.git", .upToNextMinor(from: "1.5.0"))
+        .package(url: "https://github.com/patrick-zippenfenig/ClickHouseNIO.git", from: "1.5.0"))
     ],
     targets: [
         .target(
