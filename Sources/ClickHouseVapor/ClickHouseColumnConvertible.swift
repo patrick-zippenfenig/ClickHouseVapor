@@ -204,7 +204,7 @@ public extension Field where Value == ClickHouseEnum16 {
 extension Array {
     /// Only include column rows where the isIncluded array is true
     func filtered(_ isIncluded: [Bool]) -> Self {
-        precondition(count == isIncluded.count)
+        precondition(count == isIncluded.count, "Filtering model not possible, expected count \(count) but got \(isIncluded.count)")
         var arr = Self()
         let count = isIncluded.reduce(0, { $0 + ($1 ? 1 : 0) })
         arr.reserveCapacity(count)
